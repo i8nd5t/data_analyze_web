@@ -14,37 +14,29 @@ function handleFile() {
 }
 
 function processData(csv) {
-    // 2次元配列の例
-        var aaaaa = [
-        [1, 2, 3,4,5,6,7,8,9,10],
-        [1,2,3,4,5,6,7,8,9,0],
-        [1,2,3,4,5,6,7,8,9,0],
-        ];
-
-    // 表を表示
-    displayTable(aaaaa);
   let data = csv.split("\n");
-  let columns = data[0].split(",");
+  let column_names = data[0].split(",");
   let columnData = {};
-  let isnot_num_column = Array(columns.length).fill(0);
+  let isnot_num_column = Array(column_names.length).fill(0);
 
-  for (let i = 0; i < columns.length; i++) {
-    columnData[columns[i]] = [];
+  for (let i = 0; i < column_names.length; i++) {
+    columnData[column_names[i]] = [];
   }
 
   for (let j = 1; j < data.length; j++) {
     let row = data[j].split(",");
-    for (let k = 0; k < columns.length; k++) {
+    for (let k = 0; k < column_names.length; k++) {
       if (row[k] == '' || row[k] == undefined) {
         continue
       }
       if (isNaN(Number(row[k]))) {
         isnot_num_column[k] = 1;
       }
-      columnData[columns[k]].push(Number(row[k]));
+      columnData[column_names[k]].push(Number(row[k]));
     }
   }
-  displayChart(columns, columnData, isnot_num_column);
+  displayTable(column_names, columnData, isnot_num_column);
+  displayChart(column_names, columnData, isnot_num_column);
 
 }
 
@@ -53,10 +45,10 @@ function getArrayStats(arr) {
   
     // 平均を計算
     const sum = arr.reduce((acc, val) => acc + val, 0);
-    const average = sum / count;
+    const mean = sum / count;
   
     // 標準偏差を計算
-    const squaredDifferences = arr.map((val) => (val - average) ** 2);
+    const squaredDifferences = arr.map((val) => (val - mean) ** 2);
     const variance = squaredDifferences.reduce((acc, val) => acc + val, 0) / count;
     const standardDeviation = Math.sqrt(variance);
   
@@ -67,15 +59,35 @@ function getArrayStats(arr) {
     const max = Math.max(...arr);
   
     return [
-      count,
-      average,
-      standardDeviation,
-      min,
-      max,
+      count.toFixed(5),
+      mean.toFixed(5),
+      standardDeviation.toFixed(5),
+      min.toFixed(5),
+      max.toFixed(5),
     ];
 }
 
-function displayTable(columns,columnData,isnot_num_column) {
+function displayTable(column_names,columnData,isnot_num_column) {
+    let data = [];
+    const data_column_names = [];
+    const data_row_names = [
+        "count",
+        "mean",
+        "std",
+        "min",
+        "max",
+    ]
+    for (let m = 0; m < column_names.length; m++) {
+        if (isnot_num_column[m]) {
+            continue;
+        }
+        data.push(getArrayStats(columnData[column_names[m]]))
+        data_column_names.push(column_names[m])
+    }
+    const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+    data = transpose(data);
+
+    
     var table = document.createElement('table');
 
     var headerRow = document.createElement('tr');
@@ -84,7 +96,7 @@ function displayTable(columns,columnData,isnot_num_column) {
 
     for (var j = 0; j < data[0].length; j++) {
         var headerCell = document.createElement('th');
-        headerCell.textContent = 'Column ' + (j + 1);
+        headerCell.textContent = data_column_names[j];
         headerRow.appendChild(headerCell);
     }
     table.appendChild(headerRow);
@@ -93,7 +105,7 @@ function displayTable(columns,columnData,isnot_num_column) {
         var dataRow = document.createElement('tr');
 
         var rowHeader = document.createElement('th');
-        rowHeader.textContent = 'Row ' + (i + 1);
+        rowHeader.textContent = data_row_names[i];
         dataRow.appendChild(rowHeader);
 
         for (var j = 0; j < data[i].length; j++) {
@@ -110,10 +122,10 @@ function displayTable(columns,columnData,isnot_num_column) {
     container.appendChild(table);
 }
 
-function displayChart(columns, columnData, isnot_num_column) {
+function displayChart(column_names, columnData, isnot_num_column) {
     let chartsContainer = document.getElementById('chartsContainer');
     chartsContainer.innerHTML = '';
-    for (let m = 0; m < columns.length; m++) {
+    for (let m = 0; m < column_names.length; m++) {
         if (isnot_num_column[m]) {
             continue;
         }
@@ -122,16 +134,16 @@ function displayChart(columns, columnData, isnot_num_column) {
         chartsContainer.appendChild(container);
     
         let dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('number', columns[m]);
+        dataTable.addColumn('number', column_names[m]);
     
-        let dataArray = columnData[columns[m]].map(function(value) {
+        let dataArray = columnData[column_names[m]].map(function(value) {
           return [value];
         });
     
         dataTable.addRows(dataArray);
     
         let options = {
-          title: columns[m],
+          title: column_names[m],
           histogram: { bucketSize: 1 },
           legend: { position: 'none' },
           hAxis: {
