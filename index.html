@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSVファイルのアップロード</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <input type="file" id="csvFileInput" accept=".csv">
+  <button onclick="handleFile()">アップロード</button>
+  <div id="chartsContainer"></div>
+
+  <script>
+    function handleFile() {
+      var fileInput = document.getElementById("csvFileInput");
+      var file = fileInput.files[0];
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var contents = e.target.result;
+        processData(contents);
+      };
+      reader.readAsText(file);
+    }
+
+    function processData(csv) {
+      var data = csv.split("\n");
+      var columns = data[0].split(",");
+      var columnData = {};
+
+      for (var i = 0; i < columns.length; i++) {
+        columnData[columns[i]] = [];
+      }
+
+      for (var j = 1; j < data.length; j++) {
+        var row = data[j].split(",");
+        for (var k = 0; k < columns.length; k++) {
+          columnData[columns[k]].push(Number(row[k]));
+        }
+      }
+
+      var chartsContainer = document.getElementById('chartsContainer');
+      chartsContainer.innerHTML = '';
+
+      for (var m = 0; m < columns.length; m++) {
+        var canvas = document.createElement('canvas');
+        canvas.id = 'chart' + m;
+        chartsContainer.appendChild(canvas);
+
+        var chartData = {
+          labels: columnData[columns[m]], // データのラベルを追加
+          datasets: [{
+            label: columns[m],
+            data: columnData[columns[m]],
+            backgroundColor: 'rgba(0, 123, 255, 0.5)',
+            borderColor: 'rgba(0, 123, 255, 1)',
+            borderWidth: 1
+          }]
+        };
+
+        var chartOptions = {
+          responsive: true,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: columns[m]
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: '出現回数'
+              }
+            }
+          }
+        };
+
+        new Chart(canvas, {
+          type: 'bar',
+          data: chartData,
+          options: chartOptions
+        });
+      }
+    }
+  </script>
+</body>
+</html>

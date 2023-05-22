@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSVファイルのアップロード</title>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+  <input type="file" id="csvFileInput" accept=".csv">
+  <button onclick="handleFile()">アップロード</button>
+  <div id="chartsContainer"></div>
+
+  <script>
+    google.charts.load('current', {packages: ['corechart']});
+
+    function handleFile() {
+      var fileInput = document.getElementById("csvFileInput");
+      var file = fileInput.files[0];
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var contents = e.target.result;
+        processData(contents);
+      };
+      reader.readAsText(file);
+    }
+
+    function processData(csv) {
+      var data = csv.split("\n");
+      var columns = data[0].split(",");
+      var columnData = {};
+      var isnot_num_column = Array(columns.length).fill(0);
+
+      for (var i = 0; i < columns.length; i++) {
+        columnData[columns[i]] = [];
+      }
+
+      for (var j = 1; j < data.length; j++) {
+        var row = data[j].split(",");
+        for (var k = 0; k < columns.length; k++) {
+          if (row[k] == '' || row[k] == undefined) {
+            continue
+          }
+          if (isNaN(Number(row[k]))) {
+            console.log(row[k] + '     ' + k)
+            isnot_num_column[k] = 1;
+          }
+          columnData[columns[k]].push(Number(row[k]));
+        }
+      }
+      console.log(isnot_num_column)
+
+      var chartsContainer = document.getElementById('chartsContainer');
+      chartsContainer.innerHTML = '';
+
+      for (var m = 0; m < columns.length; m++) {
+        if (isnot_num_column[m]) {
+            continue;
+        }
+        var container = document.createElement('div');
+        container.id = 'chart' + m;
+        chartsContainer.appendChild(container);
+
+        var dataTable = new google.visualization.DataTable();
+        dataTable.addColumn('number', columns[m]);
+
+        var dataArray = columnData[columns[m]].map(function(value) {
+          return [value];
+        });
+
+        dataTable.addRows(dataArray);
+
+        var options = {
+          title: columns[m],
+          histogram: { bucketSize: 1 },
+          legend: { position: 'none' },
+          hAxis: {
+            viewWindow: { min: 0 }
+          }
+        };
+
+        var chart = new google.visualization.Histogram(container);
+        chart.draw(dataTable, options);
+      }
+    }
+  </script>
+</body>
+</html>
