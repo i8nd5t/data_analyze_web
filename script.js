@@ -1,4 +1,12 @@
-google.charts.load('current', {packages: ['corechart']});
+google.charts.load('visualization', {packages: ['corechart','table']});
+
+let column_names = undefined;
+let columnData = undefined;
+let isnot_num_column = undefined;
+
+function getElementByXpath(path) {
+  return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+}
 
 //アップロード後
 function handleFile() {
@@ -15,9 +23,9 @@ function handleFile() {
 
 function processData(csv) {
   let data = csv.split("\n");
-  let column_names = data[0].split(",");
-  let columnData = {};
-  let isnot_num_column = Array(column_names.length).fill(0);
+  column_names = data[0].split(",");
+  columnData = {};
+  isnot_num_column = Array(column_names.length).fill(0);
 
   for (let i = 0; i < column_names.length; i++) {
     columnData[column_names[i]] = [];
@@ -59,67 +67,119 @@ function getArrayStats(arr) {
     const max = Math.max(...arr);
   
     return [
-      count.toFixed(5),
-      mean.toFixed(5),
-      standardDeviation.toFixed(5),
-      min.toFixed(5),
-      max.toFixed(5),
+      String(count.toFixed(5)),
+      String(mean.toFixed(5)),
+      String(standardDeviation.toFixed(5)),
+      String(min.toFixed(5)),
+      String(max.toFixed(5)),
     ];
 }
 
-function displayTable(column_names,columnData,isnot_num_column) {
-    let data = [];
-    const data_column_names = [];
-    const data_row_names = [
-        "count",
-        "mean",
-        "std",
-        "min",
-        "max",
-    ]
-    for (let m = 0; m < column_names.length; m++) {
-        if (isnot_num_column[m]) {
-            continue;
-        }
-        data.push(getArrayStats(columnData[column_names[m]]))
-        data_column_names.push(column_names[m])
-    }
-    const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
-    data = transpose(data);
+// function displayTable(column_names,columnData,isnot_num_column) {
+//     let data = [];
+//     const data_column_names = [];
+//     const data_row_names = [
+//         "count",
+//         "mean",
+//         "std",
+//         "min",
+//         "max",
+//     ]
+//     for (let m = 0; m < column_names.length; m++) {
+//         if (isnot_num_column[m]) {
+//             continue;
+//         }
+//         data.push(getArrayStats(columnData[column_names[m]]))
+//         data_column_names.push(column_names[m])
+//     }
+//     const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+//     data = transpose(data);
 
     
-    var table = document.createElement('table');
+//     var table = document.createElement('table');
+//     table.classList.add('data-table');
+//     table.style.width = "100%";
 
-    var headerRow = document.createElement('tr');
-    var emptyHeaderCell = document.createElement('th'); // 空の見出しセルを作成
-    headerRow.appendChild(emptyHeaderCell); // 空の見出しセルを追加
+//     var headerRow = document.createElement('tr');
+//     var emptyHeaderCell = document.createElement('th'); // 空の見出しセルを作成
+//     headerRow.appendChild(emptyHeaderCell); // 空の見出しセルを追加
 
-    for (var j = 0; j < data[0].length; j++) {
-        var headerCell = document.createElement('th');
-        headerCell.textContent = data_column_names[j];
-        headerRow.appendChild(headerCell);
+//     for (var j = 0; j < data[0].length; j++) {
+//         var headerCell = document.createElement('th');
+//         headerCell.textContent = data_column_names[j];
+//         headerRow.appendChild(headerCell);
+//     }
+//     table.appendChild(headerRow);
+
+//     for (var i = 0; i < data.length; i++) {
+//         var dataRow = document.createElement('tr');
+
+//         var rowHeader = document.createElement('th');
+//         rowHeader.textContent = data_row_names[i];
+//         dataRow.appendChild(rowHeader);
+
+//         for (var j = 0; j < data[i].length; j++) {
+//             var dataCell = document.createElement('td');
+//             dataCell.textContent = data[i][j];
+//             dataRow.appendChild(dataCell);
+//         }
+
+//         table.appendChild(dataRow);
+//     }
+
+//     var container = document.getElementById('tableContainer');
+//     container.innerHTML = '';
+//     container.appendChild(table);
+// }
+
+function displayTable(column_names, columnData, isnot_num_column) {
+  let data = [];
+  const data_column_names = [];
+  const data_row_names = [
+    "count",
+    "mean",
+    "std",
+    "min",
+    "max",
+  ];
+  for (let m = 0; m < column_names.length; m++) {
+    if (isnot_num_column[m]) {
+      continue;
     }
-    table.appendChild(headerRow);
+    data.push(getArrayStats(columnData[column_names[m]]));
+    data_column_names.push(column_names[m]);
+  }
+  const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+  data = transpose(data);
 
-    for (var i = 0; i < data.length; i++) {
-        var dataRow = document.createElement('tr');
+  const dataTable = new google.visualization.DataTable();
+  dataTable.addColumn('string', ''); // 空の列を追加
 
-        var rowHeader = document.createElement('th');
-        rowHeader.textContent = data_row_names[i];
-        dataRow.appendChild(rowHeader);
+  for (let j = 0; j < data_column_names.length; j++) {
+    dataTable.addColumn('string', data_column_names[j]);
+  }
 
-        for (var j = 0; j < data[i].length; j++) {
-            var dataCell = document.createElement('td');
-            dataCell.textContent = data[i][j];
-            dataRow.appendChild(dataCell);
-        }
-
-        table.appendChild(dataRow);
+  for (let i = 0; i < data_row_names.length; i++) {
+    let rowData = [data_row_names[i]];
+    for (let j = 0; j < data_column_names.length; j++) {
+      rowData.push(data[i][j]);
     }
+    dataTable.addRow(rowData);
+  }
+  // console.log(dataTable)
 
-    var container = document.getElementById('tableContainer');
-    container.innerHTML = '';
-    container.appendChild(table);
+  const table = new google.visualization.Table(document.getElementById('tableContainer'));
+  table.draw(dataTable, {
+    allowHtml: true,
+    width: '100%',
+    cssClassNames: {
+      headerRow: 'google-table-header',
+      tableRow: 'google-table-row',
+      oddTableRow: 'google-table-row-odd',
+      headerCell: 'google-table-header-cell',
+      tableCell: 'google-table-cell',
+    },
+  });
 }
 
 function displayChart(column_names, columnData, isnot_num_column) {
@@ -131,6 +191,8 @@ function displayChart(column_names, columnData, isnot_num_column) {
         }
         let container = document.createElement('div');
         container.id = 'chart' + m;
+        container.classList.add('chart')
+        // container.style.width = "100%"
         chartsContainer.appendChild(container);
     
         let dataTable = new google.visualization.DataTable();
@@ -143,6 +205,8 @@ function displayChart(column_names, columnData, isnot_num_column) {
         dataTable.addRows(dataArray);
     
         let options = {
+          width: '100%',
+          height: '100%',
           title: column_names[m],
           histogram: { bucketSize: 1 },
           legend: { position: 'none' },
@@ -154,4 +218,16 @@ function displayChart(column_names, columnData, isnot_num_column) {
         let chart = new google.visualization.Histogram(container);
         chart.draw(dataTable, options);
       }
+    adjust_layout()
+}
+
+function adjust_layout() { 
+  console.log(document.querySelector("#chart0 > div > div:nth-child(1) > div > svg > g:nth-child(4)").style.width)
+  console.log(document.querySelector("#chart0 > div > div:nth-child(1) > div > svg > g:nth-child(4)").width)
+}
+
+window.onresize = function(){
+  if (column_names) {
+    displayChart(column_names, columnData, isnot_num_column);
+  }
 }
